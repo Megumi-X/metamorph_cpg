@@ -6,6 +6,7 @@ import mujoco_py
 import numpy as np
 from gym import spaces
 from gym.utils import seeding
+from requests import get
 
 from metamorph.config import cfg
 from metamorph.utils import exception as exu
@@ -14,6 +15,8 @@ from metamorph.utils import spaces as spu
 from metamorph.utils import sample as su
 from metamorph.utils import xml as xu
 from metamorph.envs.modules.agent import create_agent_xml
+from metamorph.utils.cpg import CPGNetwork, get_adjacency_matrix, get_initial_angles
+from metamorph.utils.mjpy import print_kinematic_tree
 
 
 DEFAULT_SIZE = 1024
@@ -51,6 +54,8 @@ class UnimalEnv(gym.Env):
         self.modules = OrderedDict()
         self.seed()
         self.unimal_xmls = self._load_all_unimals()
+        self.cpg_network = None
+        self.cpg_edge_num = 0
 
     def _load_all_unimals(self):
         dir_path = os.path.join(cfg.ENV.WALKER_DIR, "xml")
@@ -96,6 +101,19 @@ class UnimalEnv(gym.Env):
         # Update module fields which require sim
         for _, module in self.modules.items():
             module.modify_sim_step(self, sim)
+        # Set CPG network
+        if cfg.CPG.USE_CPG:
+            W = get_adjacency_matrix(model)
+            x0 = get_initial_angles(model)
+            self.cpg_network = CPGNetwork(
+                num_oscillators=W.shape[0],
+                W=W * cfg.CPG.WEIGHT,
+                a=np.ones((W.shape[0])) * cfg.CPG.a,
+                x0=x0,
+                dt=model.opt.timestep,
+            )
+            for n in self.cpg_network.coupling_list:
+                self.cpg_edge_num += len(n)
         return sim
 
     def update(self, unimal_id, idx):
@@ -118,6 +136,11 @@ class UnimalEnv(gym.Env):
     def _set_action_space(self):
         bounds = self.sim.model.actuator_ctrlrange.copy().astype(np.float32)
         low, high = bounds.T
+        if cfg.CPG.USE_CPG:
+            max_r = (high - low) / 2.0
+            max_nu = cfg.CPG.MAX_NU
+            low = np.concatenate([np.zeros_like(max_r)] * 3)
+            high = np.concatenate([max_r, max_nu * np.ones_like(max_r), 2 * np.pi * np.ones_like(max_r)])
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
         return self.action_space
 
@@ -131,7 +154,11 @@ class UnimalEnv(gym.Env):
     # Common rewards and costs
     ###########################################################################
     def control_cost(self, action):
-        control_cost = cfg.ENV.CTRL_COST_WEIGHT * np.sum(np.square(action))
+        real_action = action.copy()
+        # if cfg.CPG.USE_CPG:
+        #     self.cpg_network.set_parameters(action)
+        #     real_action = self.cpg_network.get_output()
+        control_cost = cfg.ENV.CTRL_COST_WEIGHT * np.sum(np.square(real_action))
         return control_cost
 
     def calculate_energy(self):
@@ -149,6 +176,8 @@ class UnimalEnv(gym.Env):
             self.sim = self._get_sim()
         else:
             self.sim.reset()
+        if self.cpg_network is not None:
+            self.cpg_network.reset()
         self.step_count = 0
 
         if self.viewer is not None:
@@ -200,9 +229,16 @@ class UnimalEnv(gym.Env):
 
     def do_simulation(self, ctrl):
         self.step_count += 1
-        self.sim.data.ctrl[:] = ctrl
+        if self.cpg_network is not None:
+            assert ctrl.shape[0] == self.cpg_network.num_oscillators * 3 == self.action_space.shape[0]
+            self.cpg_network.set_parameters(ctrl)
+        else:
+            self.sim.data.ctrl[:] = ctrl
         for _ in range(self.frame_skip):
             try:
+                if self.cpg_network is not None:
+                    self.cpg_network.step()
+                    self.sim.data.ctrl[:] = self.cpg_network.get_output()
                 self.sim.step()
             except Exception as e:
                 uid = self.metadata["unimal_id"]

@@ -164,8 +164,12 @@ class ActorCritic(nn.Module):
         self.v_net = TransformerModel(obs_space, 1)
 
         if cfg.ENV_NAME == "Unimal-v0":
-            self.mu_net = TransformerModel(obs_space, 2)
-            self.num_actions = cfg.MODEL.MAX_LIMBS * 2
+            if cfg.CPG.USE_CPG:
+                self.mu_net = TransformerModel(obs_space, 6)
+                self.num_actions = cfg.MODEL.MAX_LIMBS * 6
+            else:
+                self.mu_net = TransformerModel(obs_space, 2)
+                self.num_actions = cfg.MODEL.MAX_LIMBS * 2
         else:
             raise ValueError("Unsupported ENV_NAME")
 
@@ -240,6 +244,8 @@ class Agent:
         act = pi.sample()
         logp = pi.log_prob(act)
         act_mask = obs["act_padding_mask"].bool()
+        if cfg.CPG.USE_CPG:
+            act_mask = torch.cat([act_mask] * 3, dim=-1)
         logp[act_mask] = 0.0
         logp = logp.sum(-1, keepdim=True)
         return val, act, logp

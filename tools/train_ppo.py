@@ -118,7 +118,7 @@ def parse_args():
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
-    return parser.parse_args()
+    return parser.parse_known_args()
 
 
 def ppo_train():
@@ -139,7 +139,7 @@ def ppo_train():
 
 def main():
     # Parse cmd line args
-    args = parse_args()
+    args, _ = parse_args()
 
     # Load config options
     cfg.merge_from_file(args.cfg_file)

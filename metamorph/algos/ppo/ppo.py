@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from metamorph import envs
 from metamorph.config import cfg
 from metamorph.envs.vec_env.vec_video_recorder import VecVideoRecorder
 from metamorph.utils import file as fu
@@ -98,7 +99,6 @@ class PPO:
                     dtype=torch.float32,
                     device=self.device,
                 )
-
                 self.buffer.insert(obs, act, logp, val, reward, masks, timeouts)
                 obs = next_obs
 

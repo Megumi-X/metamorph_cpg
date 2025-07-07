@@ -220,7 +220,7 @@ _C.HFIELD.VIZ = False
 _C.VIDEO = CN()
 
 # Save video
-_C.VIDEO.SAVE = False
+_C.VIDEO.SAVE = True
 
 # Frame width
 _C.VIDEO.WIDTH = 640
@@ -269,7 +269,7 @@ _C.PPO.ENTROPY_COEF = 0.0
 _C.PPO.TIMESTEPS = 2560
 
 # Number of parallel envs for collecting rollouts
-_C.PPO.NUM_ENVS = 32
+_C.PPO.NUM_ENVS = 128
 
 # Learning rate ranges from BASE_LR to MIN_LR*BASE_LR according to the LR_POLICY
 _C.PPO.BASE_LR = 3e-4
@@ -461,19 +461,19 @@ _C.LOG_PERIOD = 10
 _C.CHECKPOINT_PERIOD = 100
 
 # Evaluate the policy after every EVAL_PERIOD iters
-_C.EVAL_PERIOD = -1
+_C.EVAL_PERIOD = 100
 
 # Node ID for distributed runs
 _C.NODE_ID = -1
 
 # Number of nodes
-_C.NUM_NODES = 1
+_C.NUM_NODES = 8
 
 # Unimal template path relative to the basedir
 _C.UNIMAL_TEMPLATE = "./metamorph/envs/assets/unimal.xml"
 
 # Save histogram weights
-_C.SAVE_HIST_WEIGHTS = False
+_C.SAVE_HIST_WEIGHTS = True
 
 # Optional description for exp
 _C.DESC = ""
@@ -482,6 +482,16 @@ _C.DESC = ""
 _C.EXIT_ON_MJ_STEP_EXCEPTION = False
 
 _C.MIRROR_DATA_AUG = False
+
+_C.CPG = CN()
+
+_C.CPG.USE_CPG = True
+
+_C.CPG.WEIGHT = 6.0
+
+_C.CPG.a = 200.0
+
+_C.CPG.MAX_NU = 3.0
 
 def dump_cfg(cfg_name=None):
     """Dumps the config to the output directory."""

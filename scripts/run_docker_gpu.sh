@@ -9,9 +9,9 @@ echo "Executing in the docker (gpu image):"
 echo $cmd_line
 
 USER_ID=`id -u`
-MOUNT_DIR=''
+MOUNT_DIR='/home/xiongxiaoyu/metamorph/output'
 
-docker run --runtime=nvidia --rm --network host --ipc=host \
+docker run --gpus all --rm --network host --ipc=host \
     -v ${MOUNT_DIR}:/user/metamorph/output \
     -u user:${USER_ID} \
     metamorph \

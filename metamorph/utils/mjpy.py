@@ -1,6 +1,8 @@
 import itertools
 
 from lxml import etree
+import mujoco_py
+from typing import Dict, List
 from mujoco_py import MjSim
 from mujoco_py import load_model_from_xml
 
@@ -141,3 +143,55 @@ def get_active_contacts(sim):
         for contact in contacts
     ]
     return sorted(list(set(contact_geoms)))
+
+JOINT_TYPES = {
+    0: 'free',
+    1: 'ball',
+    2: 'slide',
+    3: 'hinge'
+}
+
+def print_kinematic_tree(model):
+    print(f"--- Kinematic Tree for Model ---")
+    
+    # 1. 创建一个从父物体ID到子物体ID列表的映射，方便查找
+    child_map: Dict[int, List[int]] = {i: [] for i in range(model.nbody)}
+    for i in range(1, model.nbody):  # 从1开始，因为body 0是world
+        parent_id = model.body_parentid[i]
+        child_map[parent_id].append(i)
+
+    joint_to_actuators: Dict[int, List[int]] = {i: [] for i in range(model.njnt)}
+    for i in range(model.nu):
+        if model.actuator_trntype[i] == 0:
+            joint_id = model.actuator_trnid[i, 0]
+            if joint_id != -1:
+                joint_to_actuators[joint_id].append(i)
+
+    def _recursive_print(body_id: int, indent_level: int):
+        prefix = "  " * indent_level
+        body_name = model.body_id2name(body_id)
+        
+        print(f"{prefix}└── BODY: {body_name} (ID: {body_id})")
+
+        num_jnt = model.body_jntnum[body_id]
+        if num_jnt > 0:
+            joint_start_addr = model.body_jntadr[body_id]
+            for i in range(num_jnt):
+                joint_id = joint_start_addr + i
+                joint_name = model.joint_id2name(joint_id)
+                joint_type_id = model.jnt_type[joint_id]
+                joint_type_name = JOINT_TYPES.get(joint_type_id, "unknown")
+                
+                print(f"{prefix}    ├── JOINT: {joint_name} (ID: {joint_id}, Type: {joint_type_name})")
+
+                actuator_ids = joint_to_actuators.get(joint_id, [])
+                for act_id in actuator_ids:
+                    actuator_name = model.actuator_id2name(act_id)
+                    print(f"{prefix}    │   └── ACTUATOR: {actuator_name} (ID: {act_id})")
+
+        children_ids = child_map.get(body_id, [])
+        for child_id in children_ids:
+            _recursive_print(child_id, indent_level + 1)
+
+    _recursive_print(0, 0)
+    print("--- End of Kinematic Tree ---")

@@ -33,8 +33,9 @@ RUN apt-get update -q \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -o /usr/local/bin/patchelf https://s3-us-west-2.amazonaws.com/openai-sci-artifacts/manual-builds/patchelf_0.9_amd64.elf \
-    && chmod +x /usr/local/bin/patchelf
+# RUN curl -o /usr/local/bin/patchelf https://s3-us-west-2.amazonaws.com/openai-sci-artifacts/manual-builds/patchelf_0.9_amd64.elf \
+#     && chmod +x /usr/local/bin/patchelf
+RUN apt-get update && apt-get install -y patchelf
 
 ENV LANG C.UTF-8
 
@@ -66,6 +67,7 @@ ENV PATH=/user/miniconda/bin:${PATH}
 RUN conda create -n docker_env python=3.8
 # Make python default to env python
 ENV PATH=/user/miniconda/envs/docker_env/bin:${PATH}
+RUN pip install "Cython<3"
 
 COPY docker/build_files/requirements.txt /user/metamorph/docker/build_files/requirements.txt
 COPY docker/build_files/install_gpu_deps.sh /user/metamorph/docker/build_files/install_gpu_deps.sh

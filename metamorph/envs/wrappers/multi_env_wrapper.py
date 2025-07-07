@@ -147,8 +147,8 @@ class MultiUnimalNodeCentricAction(gym.ActionWrapper):
         num_joints = self.metadata["num_joints"]
         num_pads = self.max_limbs * 2 - num_joints
         low, high = self.action_space.low, self.action_space.high
-        low = np.concatenate([low, [-1] * num_pads]).astype(np.float32)
-        high = np.concatenate([high, [-1] * num_pads]).astype(np.float32)
+        low = np.concatenate([low, [-1] * num_pads * 3]).astype(np.float32)
+        high = np.concatenate([high, [-1] * num_pads * 3]).astype(np.float32)
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
     def action(self, action):
@@ -156,5 +156,10 @@ class MultiUnimalNodeCentricAction(gym.ActionWrapper):
             action = action.reshape(-1, 2)
             action = action[self.metadata["act_m_to_o"], :].reshape(-1)
 
-        new_action = action[~self.metadata["act_padding_mask"]]
+        if cfg.CPG.USE_CPG:
+            mask = ~self.metadata["act_padding_mask"]
+            mask = np.concatenate([mask, mask, mask], axis=-1)
+            new_action = action[mask]
+        else:
+            new_action = action[~self.metadata["act_padding_mask"]]
         return new_action
