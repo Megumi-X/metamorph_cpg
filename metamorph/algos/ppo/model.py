@@ -221,6 +221,8 @@ class ActorCritic(nn.Module):
 
         if act is not None:
             logp = pi.log_prob(act)
+            if cfg.CPG.USE_CPG:
+                act_mask = torch.cat([act_mask] * 3, dim=-1)
             logp[act_mask] = 0.0
             logp = logp.sum(-1, keepdim=True)
             entropy = pi.entropy()
