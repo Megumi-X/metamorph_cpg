@@ -11,8 +11,9 @@ echo $cmd_line
 USER_ID=`id -u`
 MOUNT_DIR='/home/xiongxiaoyu/metamorph/output'
 
-docker run --gpus all --rm --network host --ipc=host \
+docker run --gpus all -d --network host --ipc=host \
+    --name metamorph \
+    --restart unless-stopped \
     -v ${MOUNT_DIR}:/user/metamorph/output \
-    -u user:${USER_ID} \
     metamorph \
-    bash -c "cd /user/metamorph/ && $cmd_line"
+    tail -f /dev/null

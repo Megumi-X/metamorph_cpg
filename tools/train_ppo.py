@@ -130,10 +130,16 @@ def ppo_train():
 
     torch.set_num_threads(1)
     PPOTrainer = PPO()
+    if cfg.VIDEO.SAVE:
+        os.mkdir("./output/videos_init")
+        PPOTrainer.save_video("./output/videos_init")
     PPOTrainer.train()
     hparams = get_hparams()
     PPOTrainer.save_rewards(hparams=hparams)
     PPOTrainer.save_model()
+    if cfg.VIDEO.SAVE:
+        os.mkdir("./output/videos_final")
+        PPOTrainer.save_video("./output/videos_final")
     cleanup_tensorboard()
 
 

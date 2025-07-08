@@ -136,6 +136,7 @@ class PPO:
                 clip_ratio = cfg.PPO.CLIP_EPS
                 ratio = torch.exp(logp - batch["logp_old"])
                 approx_kl = (batch["logp_old"] - logp).mean().item()
+                self.writer.add_scalar("Loss/Approx_KL", approx_kl, self.env_steps_done(cur_iter))
 
                 if approx_kl > cfg.PPO.KL_TARGET_COEF * 0.01:
                     return

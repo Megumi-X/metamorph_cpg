@@ -257,7 +257,7 @@ _C.PPO.VALUE_COEF = 0.5
 
 # If KL divergence between old and new policy exceeds KL_TARGET_COEF * 0.01
 # stop updates. Default value is high so that it's not used by default.
-_C.PPO.KL_TARGET_COEF = 20.0
+_C.PPO.KL_TARGET_COEF = 30
 
 # Clip value function
 _C.PPO.USE_CLIP_VALUE_FUNC = True
@@ -272,7 +272,7 @@ _C.PPO.TIMESTEPS = 2560
 _C.PPO.NUM_ENVS = 128
 
 # Learning rate ranges from BASE_LR to MIN_LR*BASE_LR according to the LR_POLICY
-_C.PPO.BASE_LR = 3e-4
+_C.PPO.BASE_LR = 1e-6
 _C.PPO.MIN_LR = 0.0
 
 # Learning rate policy select from {'cos', 'lin'}
@@ -282,13 +282,13 @@ _C.PPO.LR_POLICY = "cos"
 _C.PPO.WARMUP_FACTOR = 0.1
 
 # Gradually warm up the OPTIM.BASE_LR over this number of iters
-_C.PPO.WARMUP_ITERS = 5
+_C.PPO.WARMUP_ITERS = 20
 
 # EPS for Adam/RMSProp
 _C.PPO.EPS = 1e-5
 
 # Value to clip the gradient via clip_grad_norm_
-_C.PPO.MAX_GRAD_NORM = 0.5
+_C.PPO.MAX_GRAD_NORM = 1.0
 
 # Total number of env.step() across all processes and all rollouts over the
 # course of training
@@ -421,7 +421,7 @@ _C.VECENV = CN()
 _C.VECENV.TYPE = "SubprocVecEnv"
 
 # Number of envs to run in series for SubprocVecEnv
-_C.VECENV.IN_SERIES = 2
+_C.VECENV.IN_SERIES = 1
 
 # --------------------------------------------------------------------------- #
 # CUDNN options
@@ -467,7 +467,7 @@ _C.EVAL_PERIOD = 100
 _C.NODE_ID = -1
 
 # Number of nodes
-_C.NUM_NODES = 8
+_C.NUM_NODES = 1
 
 # Unimal template path relative to the basedir
 _C.UNIMAL_TEMPLATE = "./metamorph/envs/assets/unimal.xml"
